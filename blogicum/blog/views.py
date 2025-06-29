@@ -124,4 +124,3 @@ def delete_post(request, pk):
 #         form = CommentForm(instance=comment)
 
 #     return render(request, 'blog/comment.html', {'form': form})
-
