@@ -30,10 +30,11 @@ def index(request):
 
 
 def post_detail(request, pk):
-    post = get_object_or_404(
-        get_published_posts(),
-        pk=pk
-    )
+    if request.user.is_authenticated:
+
+        post = get_object_or_404(Post, pk=pk)
+    else:
+        post = get_object_or_404(get_published_posts(), pk=pk)
     return render(request, 'blog/detail.html', {'post': post})
 
 
@@ -91,8 +92,8 @@ def delete_post(request, pk):
     if request.method == 'POST':
         post.delete()
         return redirect('blog:index')
-
-    return render(request, 'blog/create.html', {'post': post})
+    form = PostForm(instance=post)
+    return render(request, 'blog/create.html', {'form': form})
 
 
 # @login_required
