@@ -162,7 +162,6 @@ def edit_comment(request, post_id, comment_id):
     return render(request, 'blog/detail.html', {'form': form, 'post': post})
 
 
-
 @login_required
 def delete_comment(request, post_id, comment_id):
     comment = get_object_or_404(Comment, id=comment_id)
