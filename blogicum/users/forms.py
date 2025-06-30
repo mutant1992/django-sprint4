@@ -25,7 +25,19 @@ class EditProfileForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['username'].label = "Логин"
-        self.fields['first_name'].label = "Имя"
-        self.fields['last_name'].label = "Фамилия"
-        self.fields['email'].label = "Электронная почта"
+        # Убираем стандартные подсказки
+        self.fields['username'].help_text = None
+
+    def clean_username(self):
+        username = self.cleaned_data.get('username')
+        if User.objects.exclude(pk=self.instance.pk).filter(
+                username=username).exists():
+            raise forms.ValidationError("Этот логин уже занят")
+        return username
+
+    def clean_email(self):
+        email = self.cleaned_data.get('email')
+        if User.objects.exclude(pk=self.instance.pk).filter(
+                email=email).exists():
+            raise forms.ValidationError("Этот email уже используется")
+        return email

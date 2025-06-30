@@ -10,28 +10,13 @@ class RulesView(TemplateView):
     template_name = 'pages/rules.html'
 
 
-class PageNotFoundView(TemplateView):
-    template_name = 'pages/404.html'
+def page_not_found(request, exception):
+    return render(request, 'pages/404.html', status=404)
 
-    def get(self, request, exception, *args, **kwargs):
-        return self.render_to_response({}, status=404)
+
+def error_500(request):
+    return render(request, 'pages/500.html', status=500)
 
 
 def csrf_failure(request, reason=''):
     return render(request, 'pages/403csrf.html', status=403)
-
-
-class ServerErrorView(TemplateView):
-    template_name = 'pages/500.html'
-
-    def get(self, request, *args, **kwargs):
-        return self.render_to_response({}, status=500)
-
-# def about(request):
-#     template = 'pages/about.html'
-#     return render(request, template)
-
-
-# def rules(request):
-#     template = 'pages/rules.html'
-#     return render(request, template)

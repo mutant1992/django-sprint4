@@ -1,6 +1,5 @@
 from django.shortcuts import get_object_or_404, render, redirect
 from django.contrib.auth.decorators import login_required
-from django.contrib import messages
 from django.contrib.auth import get_user_model
 
 from users.forms import EditProfileForm
@@ -23,14 +22,26 @@ def user_profile(request, username):
 
 
 @login_required
-def edit_profile(request):
-    user = request.user
+def edit_profile(request, username):
+    user = get_object_or_404(myuser, username=username)
+
+    if request.user != user:
+        return redirect('user_profile', username=request.user.username)
+
     if request.method == 'POST':
-        form = EditProfileForm(request.POST, instance=user)
+        form = EditProfileForm(
+            request.POST,
+            instance=user,
+            initial={
+                'email': user.email,
+                'username': user.username
+            }
+        )
         if form.is_valid():
             form.save()
-            messages.success(request, 'Профиль успешно отредактирован.')
-            return redirect('user_profile', username=user.username)
+            updated_user = myuser.objects.get(pk=user.pk)
+            updated_user.refresh_from_db()
+            return redirect('user_profile', username=updated_user.username)
     else:
         form = EditProfileForm(instance=user)
 

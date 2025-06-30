@@ -106,10 +106,13 @@ def delete_post(request, pk):
 
 @login_required
 def add_comment(request, post_id):
-    try:
-        post = Post.objects.get(id=post_id)
-    except Post.DoesNotExist:
-        raise Http404("Пост не найден")
+    post = get_object_or_404(Post, id=post_id)
+
+    # Проверяем условия публикации
+    if not (post.is_published
+            and post.pub_date <= timezone.now()
+            and post.category.is_published):
+        raise Http404("Пост недоступен для комментирования")
 
     if request.method == 'POST':
         form = CommentForm(request.POST)
@@ -125,41 +128,24 @@ def add_comment(request, post_id):
     return render(request, 'blog/detail.html', {'form': form, 'post': post})
 
 
-# @login_required
-# def add_comment(request, post_id):
-#     post = get_object_or_404(Post, id=post_id)
-
-#     if request.method == 'POST':
-#         form = CommentForm(request.POST)
-#         if form.is_valid():
-#             comment = form.save(commit=False)
-#             comment.post = post
-#             comment.author = request.user
-#             comment.save()
-#             return redirect('blog:post_detail', pk=post.id)
-#     else:
-#         form = CommentForm()
-
-#     return render(request, 'blog/detail.html', {'form': form, 'post': post})
-
-
 @login_required
 def edit_comment(request, post_id, comment_id):
     comment = get_object_or_404(Comment, id=comment_id)
     post = get_object_or_404(Post, id=post_id)
 
     if comment.author != request.user:
-        return redirect('blog:post_detail', post_id=post.id)
+        return redirect('blog:post_detail', pk=post.id)
 
     if request.method == 'POST':
         form = CommentForm(request.POST, instance=comment)
         if form.is_valid():
             form.save()
-            return redirect('blog:post_detail', post_id=post.id)
+            return redirect('blog:post_detail', pk=post.id)
     else:
         form = CommentForm(instance=comment)
 
-    return render(request, 'blog/detail.html', {'form': form, 'post': post})
+    return render(request, 'blog/comment.html',
+                  {'form': form, 'comment': comment, 'post': post})
 
 
 @login_required
@@ -168,12 +154,15 @@ def delete_comment(request, post_id, comment_id):
     post = get_object_or_404(Post, id=post_id)
 
     if comment.author != request.user:
+        print('отработал что не автор')
         return redirect('blog:post_detail', pk=post.id)
 
     if request.method == 'POST':
+        print('отработал Post')
         comment.delete()
         return redirect('blog:post_detail', pk=post.id)
 
+    print('ничего не отработал')
     form = CommentForm()
     return render(request, 'blog/comment.html', {'form': form,
                                                  'comment': comment,
