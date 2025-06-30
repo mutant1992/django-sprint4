@@ -8,6 +8,7 @@ from users.forms import CustomUserCreationForm
 from users.views import user_profile, edit_profile
 
 
+
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('blog.urls', namespace='blog')),
@@ -23,7 +24,7 @@ urlpatterns = [
         name='registration',
     ),
     path('profile/<str:username>/', user_profile, name='user_profile'),
-    path('profile/<str:username>/edit/', edit_profile, name='edit_profile'),
+    path('edit_profile/<str:username>/', edit_profile, name='edit_profile')
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 handler404 = 'pages.views.page_not_found'
