@@ -41,8 +41,7 @@ class Post(TimeStampedModel):
     )
     category = models.ForeignKey(
         'Category',
-        on_delete=models.SET_NULL,
-        null=True,
+        on_delete=models.CASCADE,
         verbose_name='Категория'
     )
     image = models.ImageField('Фото', upload_to='post_images', blank=True)
