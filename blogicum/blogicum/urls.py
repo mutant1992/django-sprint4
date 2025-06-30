@@ -6,6 +6,7 @@ from django.conf.urls.static import static
 
 from users.forms import CustomUserCreationForm
 from users.views import user_profile, edit_profile
+from pages.views import PageNotFoundView, ServerErrorView
 
 
 urlpatterns = [
@@ -25,5 +26,6 @@ urlpatterns = [
     path('profile/<str:username>/', user_profile, name='user_profile'),
     path('edit_profile/', edit_profile, name='edit_profile'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-handler404 = 'core.views.page_not_found'
-handler500 = 'core.views.server_error'
+
+handler404 = PageNotFoundView.as_view()
+handler500 = ServerErrorView.as_view()
