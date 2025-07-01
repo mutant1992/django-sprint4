@@ -9,6 +9,7 @@ from blog.views import get_paginated_response
 
 myuser = get_user_model()
 
+
 def user_profile(request, username):
     profile = get_object_or_404(myuser, username=username)
     posts = Post.objects.filter(author=profile)
@@ -19,10 +20,11 @@ def user_profile(request, username):
     }
     return render(request, 'blog/profile.html', context)
 
+
 @login_required
 def edit_profile(request, username):
     user = get_object_or_404(myuser, username=username)
-    
+
     if request.user != user:
         raise PermissionDenied("Нет прав для редактирования этого профиля")
     if request.method == 'POST':
@@ -32,5 +34,5 @@ def edit_profile(request, username):
             return redirect('user_profile', username=user.username)
     else:
         form = EditProfileForm(instance=user)
-    
+
     return render(request, 'blog/user.html', {'form': form})
