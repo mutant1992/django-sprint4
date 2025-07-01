@@ -1,11 +1,15 @@
 from django.shortcuts import get_object_or_404, render, redirect
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth import get_user_model
 from django.utils import timezone
 from django.core.paginator import Paginator
 from django.http import Http404
 
 from .models import Category, Comment, Post
-from .forms import CommentForm, PostForm
+from .forms import CommentForm, PostForm, EditProfileForm
+
+
+myuser = get_user_model()
 
 
 def get_published_posts():
@@ -68,7 +72,7 @@ def create_post(request):
             post = form.save(commit=False)
             post.author = request.user
             post.save()
-            return redirect('user_profile', username=request.user.username)
+            return redirect('blog:profile', username=request.user.username)
     else:
         form = PostForm()
     return render(request, 'blog/create.html', {'form': form})
@@ -159,7 +163,32 @@ def delete_comment(request, post_id, comment_id):
         comment.delete()
         return redirect('blog:post_detail', pk=post.id)
 
-    form = CommentForm()
-    return render(request, 'blog/comment.html', {'form': form,
-                                                 'comment': comment,
+    return render(request, 'blog/comment.html', {'comment': comment,
                                                  'post': post})
+
+
+def user_profile(request, username):
+    profile = get_object_or_404(myuser, username=username)
+    posts = Post.objects.filter(author=profile)
+    page_obj = get_paginated_response(posts, request)
+    context = {
+        'profile': profile,
+        'page_obj': page_obj
+    }
+    return render(request, 'blog/profile.html', context)
+
+
+@login_required
+def edit_profile(request):
+
+    user = request.user
+
+    if request.method == 'POST':
+        form = EditProfileForm(request.POST, instance=user)
+        if form.is_valid():
+            form.save()
+            return redirect('blog:profile', username=user.username)
+    else:
+        form = EditProfileForm(instance=user)
+
+    return render(request, 'blog/user.html', {'form': form})

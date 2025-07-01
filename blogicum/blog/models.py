@@ -54,6 +54,10 @@ class Post(TimeStampedModel):
     def __str__(self):
         return self.title
 
+    @property
+    def comment_count(self):
+        return self.comments.count()
+
 
 class Category(TimeStampedModel):
     title = models.CharField(max_length=256, verbose_name='Заголовок')
