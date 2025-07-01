@@ -108,7 +108,6 @@ def delete_post(request, pk):
 def add_comment(request, post_id):
     post = get_object_or_404(Post, id=post_id)
 
-    # Проверяем условия публикации
     if not (post.is_published
             and post.pub_date <= timezone.now()
             and post.category.is_published):
@@ -154,15 +153,12 @@ def delete_comment(request, post_id, comment_id):
     post = get_object_or_404(Post, id=post_id)
 
     if comment.author != request.user:
-        print('отработал что не автор')
         return redirect('blog:post_detail', pk=post.id)
 
     if request.method == 'POST':
-        print('отработал Post')
         comment.delete()
         return redirect('blog:post_detail', pk=post.id)
 
-    print('ничего не отработал')
     form = CommentForm()
     return render(request, 'blog/comment.html', {'form': form,
                                                  'comment': comment,
