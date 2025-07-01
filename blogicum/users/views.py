@@ -7,9 +7,7 @@ from users.forms import EditProfileForm
 from blog.models import Post
 from blog.views import get_paginated_response
 
-
 myuser = get_user_model()
-
 
 def user_profile(request, username):
     profile = get_object_or_404(myuser, username=username)
@@ -21,14 +19,12 @@ def user_profile(request, username):
     }
     return render(request, 'blog/profile.html', context)
 
-
 @login_required
 def edit_profile(request, username):
     user = get_object_or_404(myuser, username=username)
     
     if request.user != user:
         raise PermissionDenied("Нет прав для редактирования этого профиля")
-    
     if request.method == 'POST':
         form = EditProfileForm(request.POST, instance=user)
         if form.is_valid():
