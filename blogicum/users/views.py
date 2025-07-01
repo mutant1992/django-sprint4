@@ -1,6 +1,7 @@
 from django.shortcuts import get_object_or_404, render, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import get_user_model
+from django.core.exceptions import PermissionDenied
 
 from users.forms import EditProfileForm
 from blog.models import Post
@@ -24,25 +25,16 @@ def user_profile(request, username):
 @login_required
 def edit_profile(request, username):
     user = get_object_or_404(myuser, username=username)
-
+    
     if request.user != user:
-        return redirect('user_profile', username=request.user.username)
-
+        raise PermissionDenied("Нет прав для редактирования этого профиля")
+    
     if request.method == 'POST':
-        form = EditProfileForm(
-            request.POST,
-            instance=user,
-            initial={
-                'email': user.email,
-                'username': user.username
-            }
-        )
+        form = EditProfileForm(request.POST, instance=user)
         if form.is_valid():
             form.save()
-            updated_user = myuser.objects.get(pk=user.pk)
-            updated_user.refresh_from_db()
-            return redirect('user_profile', username=updated_user.username)
+            return redirect('user_profile', username=user.username)
     else:
         form = EditProfileForm(instance=user)
-
+    
     return render(request, 'blog/user.html', {'form': form})

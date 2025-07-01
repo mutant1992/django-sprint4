@@ -25,7 +25,6 @@ class EditProfileForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Убираем стандартные подсказки
         self.fields['username'].help_text = None
 
     def clean_username(self):
