@@ -26,10 +26,10 @@ class Location(TimeStampedModel):
     class Meta:
         verbose_name = 'местоположение'
         verbose_name_plural = 'Местоположения'
-        ordering = ['name']
+        ordering = ('name',)
 
     def __str__(self):
-        return self.name[:30] + '...' if len(self.name) > 30 else self.name
+        return self.name[:30]
 
 
 class Category(TimeStampedModel):
@@ -49,7 +49,7 @@ class Category(TimeStampedModel):
         ordering = ['title']
 
     def __str__(self):
-        return self.title[:20] + '...' if len(self.title) > 20 else self.title
+        return self.title[:20]
 
 
 class Post(TimeStampedModel):
@@ -88,11 +88,7 @@ class Post(TimeStampedModel):
         ordering = ['-pub_date']
 
     def __str__(self):
-        return self.title[:30] + '...' if len(self.title) > 30 else self.title
-
-    # @property
-    # def comment_count(self):
-    #     return self.comments.count()
+        return self.title[:30]
 
 
 class Comment(models.Model):
@@ -119,7 +115,7 @@ class Comment(models.Model):
     class Meta:
         verbose_name = 'комментарий'
         verbose_name_plural = 'Комментарии'
-        ordering = ['created_at']
+        ordering = ('created_at',)
 
     def __str__(self):
-        return self.text[:50] + '...' if len(self.text) > 50 else self.text
+        return self.text[:50]
