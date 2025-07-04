@@ -9,24 +9,23 @@ from .models import Category, Comment, Post, User
 from .forms import CommentForm, EditProfileForm, PostForm
 
 
-def get_published_posts(posts=Post.objects, filter_published=False,
-                        select_related_fields=None, annotate_comments=False):
-    queryset = posts
+def get_posts_queryset(posts=Post.objects, filter_published=True,
+                       select_related_fields=True, annotate_comments=True):
 
     if filter_published:
-        queryset = queryset.filter(
+        posts = posts.filter(
             is_published=True,
             pub_date__lte=timezone.now(),
             category__is_published=True
         )
 
     if select_related_fields:
-        queryset = queryset.select_related(*select_related_fields)
+        posts = posts.select_related('author', 'location', 'category')
 
     if annotate_comments:
-        queryset = queryset.annotate(comment_count=Count('comments'))
-
-    return queryset.order_by(*Post._meta.ordering)
+        posts = posts.annotate(
+            comment_count=Count('comments')).order_by(*Post._meta.ordering)
+    return posts
 
 
 def get_paginated_response(queryset, request, per_page=10):
@@ -36,8 +35,7 @@ def get_paginated_response(queryset, request, per_page=10):
 def index(request):
     return render(request, 'blog/index.html', {
         'page_obj': get_paginated_response(
-            get_published_posts(filter_published=True, annotate_comments=True,
-                                select_related_fields=['category', 'author']),
+            get_posts_queryset(),
             request)
     })
 
@@ -45,8 +43,9 @@ def index(request):
 def post_detail(request, post_id):
     post = get_object_or_404(Post, pk=post_id)
     if post.author != request.user:
-        post = get_object_or_404(get_published_posts(filter_published=True),
-                                 pk=post_id)
+        post = get_object_or_404(get_posts_queryset(
+            annotate_comments=False,
+            select_related_fields=False), pk=post_id)
 
     return render(request, 'blog/detail.html', {
         'post': post,
@@ -64,8 +63,7 @@ def category_posts(request, category_slug):
     return render(request, 'blog/category.html', {
         'category': category,
         'page_obj': get_paginated_response(
-            get_published_posts(posts=category.posts, filter_published=True,
-                                select_related_fields=['category', 'author']),
+            get_posts_queryset(posts=category.posts),
             request)
     })
 
@@ -125,7 +123,7 @@ def edit_comment(request, post_id, comment_id):
     comment = get_object_or_404(Comment, id=comment_id)
 
     if comment.author != request.user:
-        return redirect('blog:post_detail', post_id=post_id)
+        return redirect('blog:post_detail', post_id)
 
     form = CommentForm(request.POST or None, instance=comment)
     if form.is_valid():
@@ -141,11 +139,11 @@ def edit_comment(request, post_id, comment_id):
 def delete_comment(request, post_id, comment_id):
     comment = get_object_or_404(Comment, id=comment_id)
     if comment.author != request.user:
-        return redirect('blog:post_detail', post_id=comment.post.id)
+        return redirect('blog:post_detail', comment.post.id)
 
     if request.method == 'POST':
         comment.delete()
-        return redirect('blog:post_detail', post_id=comment.post.id)
+        return redirect('blog:post_detail', comment.post.id)
 
     return render(request, 'blog/comment.html', {'comment': comment,
                                                  'post': comment.post})
@@ -153,11 +151,10 @@ def delete_comment(request, post_id, comment_id):
 
 def user_profile(request, username):
     author = get_object_or_404(User, username=username)
-    posts = get_published_posts(
+    posts = get_posts_queryset(
         posts=author.posts,
-        filter_published=request.user != author,
-        select_related_fields=['category', 'author'],
-        annotate_comments=True)
+        filter_published=request.user != author
+    )
 
     return render(request, 'blog/profile.html', {
         'profile': author,
