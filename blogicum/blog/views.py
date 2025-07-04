@@ -36,7 +36,8 @@ def get_paginated_response(queryset, request, per_page=10):
 def index(request):
     return render(request, 'blog/index.html', {
         'page_obj': get_paginated_response(
-            get_published_posts(filter_published=True, annotate_comments=True),
+            get_published_posts(filter_published=True, annotate_comments=True,
+                                select_related_fields=['category', 'author']),
             request)
     })
 
@@ -63,7 +64,8 @@ def category_posts(request, category_slug):
     return render(request, 'blog/category.html', {
         'category': category,
         'page_obj': get_paginated_response(
-            get_published_posts(posts=category.posts, filter_published=True),
+            get_published_posts(posts=category.posts, filter_published=True,
+                                select_related_fields=['category', 'author']),
             request)
     })
 
@@ -154,6 +156,7 @@ def user_profile(request, username):
     posts = get_published_posts(
         posts=author.posts,
         filter_published=request.user != author,
+        select_related_fields=['category', 'author'],
         annotate_comments=True)
 
     return render(request, 'blog/profile.html', {
