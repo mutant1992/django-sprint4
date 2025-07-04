@@ -9,13 +9,24 @@ from .models import Category, Comment, Post, User
 from .forms import CommentForm, EditProfileForm, PostForm
 
 
-def get_published_posts(posts=Post.objects):
-    return posts.filter(
-        is_published=True,
-        pub_date__lte=timezone.now(),
-        category__is_published=True
-    ).select_related('author', 'category', 'location').annotate(
-        comment_count=Count('comments')).order_by('-pub_date')
+def get_published_posts(posts=Post.objects, filter_published=False,
+                        select_related_fields=None, annotate_comments=False):
+    queryset = posts
+
+    if filter_published:
+        queryset = queryset.filter(
+            is_published=True,
+            pub_date__lte=timezone.now(),
+            category__is_published=True
+        )
+
+    if select_related_fields:
+        queryset = queryset.select_related(*select_related_fields)
+
+    if annotate_comments:
+        queryset = queryset.annotate(comment_count=Count('comments'))
+
+    return queryset.order_by(*Post._meta.ordering)
 
 
 def get_paginated_response(queryset, request, per_page=10):
@@ -23,16 +34,18 @@ def get_paginated_response(queryset, request, per_page=10):
 
 
 def index(request):
-    posts = get_published_posts()
     return render(request, 'blog/index.html', {
-        'page_obj': get_paginated_response(posts, request)
+        'page_obj': get_paginated_response(
+            get_published_posts(filter_published=True, annotate_comments=True),
+            request)
     })
 
 
 def post_detail(request, post_id):
     post = get_object_or_404(Post, pk=post_id)
     if post.author != request.user:
-        post = get_object_or_404(get_published_posts(), pk=post_id)
+        post = get_object_or_404(get_published_posts(filter_published=True),
+                                 pk=post_id)
 
     return render(request, 'blog/detail.html', {
         'post': post,
@@ -47,10 +60,11 @@ def category_posts(request, category_slug):
         slug=category_slug,
         is_published=True
     )
-    posts = get_published_posts(category.posts)
     return render(request, 'blog/category.html', {
         'category': category,
-        'page_obj': get_paginated_response(posts, request)
+        'page_obj': get_paginated_response(
+            get_published_posts(posts=category.posts, filter_published=True),
+            request)
     })
 
 
@@ -124,26 +138,23 @@ def edit_comment(request, post_id, comment_id):
 @login_required
 def delete_comment(request, post_id, comment_id):
     comment = get_object_or_404(Comment, id=comment_id)
-    post = get_object_or_404(Post, id=post_id)
-
     if comment.author != request.user:
-        return redirect('blog:post_detail', post_id=post.id)
+        return redirect('blog:post_detail', post_id=comment.post.id)
 
     if request.method == 'POST':
         comment.delete()
-        return redirect('blog:post_detail', post_id=post.id)
+        return redirect('blog:post_detail', post_id=comment.post.id)
 
     return render(request, 'blog/comment.html', {'comment': comment,
-                                                 'post': post})
+                                                 'post': comment.post})
 
 
 def user_profile(request, username):
     author = get_object_or_404(User, username=username)
-    posts = author.posts.annotate(comment_count=Count('comments')).order_by(
-        '-pub_date')
-
-    if request.user != author:
-        posts = get_published_posts(posts)
+    posts = get_published_posts(
+        posts=author.posts,
+        filter_published=request.user != author,
+        annotate_comments=True)
 
     return render(request, 'blog/profile.html', {
         'profile': author,
